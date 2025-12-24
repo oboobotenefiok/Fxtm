@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FXTM Dashboard</title>
+    <!-- React & ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="shortcut icon" href="/download.png" type="image/x-icon" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Hamburger Button Styles */
+        .hamburger-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hamburger-line {
+            width: 24px;
+            height: 2px;
+            background-color: #333;
+            transition: all 0.3s ease;
+            border-radius: 1px;
+        }
+
+        .hamburger-btn.open .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .hamburger-btn.open .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-btn.open .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        /* Menu Overlay */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .menu-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Menu Content */
+        .menu-content {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: white;
+            z-index: 999;
+            overflow-y: auto;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-content.open {
+            left: 0;
+        }
+
+        .menu-header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 30px 20px;
+        }
+
+        .user-id {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-id span {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .menu-header h2 {
+            font-size: 20px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+
+        .user-details {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .member-since {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* Menu Items */
+        .menu-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-title {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .item-text {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .item-arrow {
+            color: #999;
+            font-size: 18px;
+        }
+
+        .live-trading-btn {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0 20px 0;
+            transition: transform 0.2s;
+        }
+
+        .live-trading-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .practice-trading {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Verification Status */
+        .verification-status {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        /* Home Page */
+        .home-page {
+            padding: 80px 20px 100px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Account Header */
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .account-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a237e;
+        }
+
+        /* Balance Section */
+        .balance-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .balance-title {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a237e;
+            margin-bottom: 30px;
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .balance-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .balance-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .balance-item {
+            text-align: center;
+        }
+
+        .balance-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .balance-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            padding: 12px;
+            background: #f5f7ff;
+            border-radius: 10px;
+            border: 1px solid #e0e6ff;
+        }
+
+        .balance-value.empty {
+            color: #999;
+            background: #f9f9f9;
+        }
+
+        .margin-level {
+            color: #ff6b6b;
+            font-weight: 700;
+        }
+
+        /* Registration Banner */
+        .registration-banner {
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            box-shadow: 0 4px 15px rgba(255, 126, 95, 0.2);
+        }
+
+        .registration-text {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .complete-registration-btn {
+            background: white;
+            color: #ff7e5f;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .complete-registration-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Open Positions */
+        .positions-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-title-home {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .count-badge {
+            background: #e3f2fd;
+            color: #1a73e8;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .no-positions {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .no-positions-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        /* Sentiment Section */
+        .sentiment-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .sentiment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .sentiment-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        .sentiment-column {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .sentiment-title {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .sentiment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eef0ff;
+        }
+
+        .sentiment-item:last-child {
+            border-bottom: none;
+        }
+
+        .coin-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .coin-arrow {
+            color: #666;
+            font-size: 18px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-around;
+            z-index: 997;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            color: #1a237e;
+        }
+
+        .nav-item.active {
+            color: #1a237e;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 22px;
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function HamburgerMenu() {
+            const [isOpen, setIsOpen] = useState(false);
+
+            const toggleMenu = () => {
+                setIsOpen(!isOpen);
+            };
+
+            return (
+                <>
+                    {/* Hamburger Icon */}
+                    <button 
+                        className={`hamburger-btn ${isOpen ? 'open' : ''}`} 
+                        onClick={toggleMenu}
+                        aria-label="Toggle menu"
+                    >
+                        <div className="hamburger-line"></div>
+                        <div className="hamburger-line"></div>
+                        <div className="hamburger-line"></div>
+                    </button>
+
+                    {/* Menu Overlay */}
+                    <div 
+                        className={`menu-overlay ${isOpen ? 'open' : ''}`} 
+                        onClick={toggleMenu}
+                    ></div>
+
+                    {/* Menu Content */}
+                    <div className={`menu-content ${isOpen ? 'open' : ''}`}>
+                        <div className="menu-header">
+                            <div className="user-id">
+                                # 00 <span>• Account ID: 5025843</span>
+                            </div>
+                            <h2>Obot Obo</h2>
+                            <div className="user-details">
+                                
+                               
+                            </div>
+                        </div>
+
+                        <div className="menu-section">
+                            <div className="section-title">Trading</div>
+                       
+                           
+                            <div className="menu-item">
+                                <div className="item-text">
+                                    Gain access to cutting edge tools and insights
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="menu-section">
+                            <div className="menu-item">
+                                <div className="item-content">
+                                    <div className="item-text">Personal details</div>
+                                </div>
+                                <div className="item-arrow">→</div>
+                            </div>
+                            <div className="menu-item">
+                                <div className="item-content">
+                                    <div className="item-text">Set up trading account</div>
+                                </div>
+                                <div className="item-arrow">→</div>
+                            </div>
+                            <div className="menu-item">
+                                <div className="item-content">
+                                    <div className="item-text">Verification</div>
+                                    <span className="verification-status">Verified ✓</span>
+                                </div>
+                                <div className="item-arrow">→</div>
+                            </div>
+                        </div>
+
+                        <div className="menu-section">
+                            <div className="menu-item">
+                                <div className="item-content">
+                                    <div className="item-text">General settings</div>
+                                </div>
+                                <div className="item-arrow">→</div>
+                            </div>
+                            <div className="menu-item">
+                                <div className="item-content">
+                                    <div className="item-text">Support</div>
+                                </div>
+                                <div className="item-arrow">→</div>
+                            </div>
+                            <div className="menu-item">
+                                <div className="item-content">
+                                    <div className="item-text">Sign out</div>
+                                </div>
+                                <div className="item-arrow">→</div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+
+        function HomePage() {
+            return (
+                <div className="home-page">
+                    {/* Account Header */}
+                    <div className="account-header">
+                        <div className="account-number"># 5025843</div>
+                    </div>
+
+                    {/* Balance Section */}
+                    <div className="balance-section">
+                        <div className="balance-title">Balance</div>
+                        <div className="balance-amount">1,724,589 NGN</div>
+                        
+                        <div className="balance-grid">
+                            <div className="balance-item">
+                                <div className="balance-label">Equity</div>
+                                <div className="balance-value">1,724,589</div>
+                            </div>
+                            <div className="balance-item">
+                                <div className="balance-label">Open profit / loss</div>
+                                <div className="balance-value">00.00</div>
+                            </div>
+                            <div className="balance-item">
+                                <div className="balance-label">Free margin</div>
+                                <div className="balance-value">1,724,589</div>
+                            </div>
+                            <div className="balance-item">
+                                <div className="balance-label">Margin level</div>
+                                <div className="balance-value empty">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Registration Banner */}
+                    <div className="registration-banner">
+                        <div className="registration-text">
+                            We still require some more information from you before you can recommence trading.
+                        </div>
+                        <button className="complete-registration-btn">
+                            Complete registration
+                        </button>
+                    </div>
+
+                    {/* Open Positions */}
+                    <div className="positions-section">
+                        <div className="section-header">
+                            <div className="section-title-home">Open positions</div>
+                            <div className="count-badge">(0)</div>
+                        </div>
+                        <div className="no-positions">
+                            <div className="no-positions-icon">📊</div>
+                            <div>You currently have no open positions.</div>
+                        </div>
+                    </div>
+
+                    {/* Sentiment Section */}
+                    <div className="sentiment-section">
+                        <div className="section-title-home">Sentiment (24hr)</div>
+                        <div className="sentiment-grid">
+                            <div className="sentiment-column">
+                                <div className="sentiment-title">Most bought</div>
+                                <div className="sentiment-item">
+                                    <span className="coin-name">Litecoin</span>
+                                    <span className="coin-arrow">→</span>
+                                </div>
+                            </div>
+                            <div className="sentiment-column">
+                                <div className="sentiment-title">Most sold</div>
+                                <div className="sentiment-item">
+                                    <span className="coin-name">Stellar</span>
+                                    <span className="coin-arrow">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function BottomNav() {
+            const [activeTab, setActiveTab] = useState('home');
+
+            const navItems = [
+                { id: 'home', label: 'Home', icon: '🏠' },
+                { id: 'trade', label: 'Trade', icon: '📈' },
+                { id: 'positions', label: 'Positions', icon: '📊' },
+                { id: 'funds', label: 'Funds', icon: '💰' },
+                { id: 'hub', label: 'Hub', icon: '⚙️' }
+            ];
+
+            return (
+                <div className="bottom-nav">
+                    {navItems.map(item => (
+                        <div
+                            key={item.id}
+                            className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                            onClick={() => setActiveTab(item.id)}
+                        >
+                            <span className="nav-icon">{item.icon}</span>
+                            <span>{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        function App() {
+            return (
+                <div className="App">
+                    <HamburgerMenu />
+                    <HomePage />
+                    <BottomNav />
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
